@@ -5,8 +5,12 @@ const app = express();
 
 const verificationService = new DomainVerificationService();
 
+if (!process.env.SERVICE_HOST) {
+  throw new Error("SERVICE_HOST environment variable is not set");
+}
+
 // Your service hostname (what users will CNAME to)
-const SERVICE_HOST = "your-service.example.com";
+const SERVICE_HOST = process.env.SERVICE_HOST;
 
 app.use(express.json());
 
@@ -43,7 +47,7 @@ app.post("/api/domains/check", async (req, res) => {
 
     if (isVerified) {
       // Here you would update Traefik configuration
-      await updateTraefikConfig(domain);
+      await updateAppDomainsConfig(domain);
 
       res.json({
         success: true,
@@ -60,28 +64,8 @@ app.post("/api/domains/check", async (req, res) => {
 });
 
 // Function to update Traefik configuration
-async function updateTraefikConfig(domain) {
-  // Option 1: File-based configuration (docker-compose labels)
-  // You would dynamically update your docker-compose.yml or
-  // create new service definitions with the verified domain
-
-  // Option 2: API-based configuration (if using Traefik API)
-  // Make HTTP requests to Traefik API to add new routes
-
-  // Option 3: Service discovery (recommended)
-  // Update your service labels/tags so Traefik picks up the new domain
-
-  console.log(`Updating Traefik config for domain: ${domain}`);
-
-  // Example: Update service labels in your orchestrator
-  // This is pseudo-code - actual implementation depends on your setup
-  /*
-  await docker.updateService('your-app', {
-    labels: {
-      [`traefik.http.routers.${domain.replace('.', '-')}.rule`]: `Host(\`${domain}\`)`,
-      [`traefik.http.routers.${domain.replace('.', '-')}.tls`]: 'true',
-      [`traefik.http.routers.${domain.replace('.', '-')}.tls.certresolver`]: 'letsencrypt'
-    }
-  });
-  */
+async function updateAppDomainsConfig(domain: string) {
+  // 1. Update which domains the application can respond to on the Platform level
+  // 2. Update the application's database to include the new domain associated with the user
+  // 3. Test if the domain is reachable and properly configured (the application must respond to requests on this domain with a special header to indicate that the domain is correctly associated with the user/app)
 }

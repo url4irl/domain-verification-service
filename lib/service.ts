@@ -1,5 +1,8 @@
 import dns from "dns/promises";
 import crypto from "crypto";
+import { setupEnvironment } from "./setup";
+
+const { txtRecordVerifyKey } = setupEnvironment();
 
 export class DomainVerificationService {
   private pendingVerifications: Map<any, any>;
@@ -47,7 +50,7 @@ export class DomainVerificationService {
       const flatRecords = records.flat();
 
       // Check if our verification token exists
-      const expectedRecord = `yourservice-verify=${pending.token}`;
+      const expectedRecord = `${txtRecordVerifyKey}=${pending.token}`;
       const isVerified = flatRecords.some((record) =>
         record.includes(expectedRecord)
       );
@@ -110,7 +113,7 @@ export class DomainVerificationService {
       step1: {
         type: "TXT",
         name: domain,
-        value: `yourservice-verify=${pending.token}`,
+        value: `${txtRecordVerifyKey}=${pending.token}`,
         instruction: `Add this TXT record to ${domain}`,
       },
       step2: {

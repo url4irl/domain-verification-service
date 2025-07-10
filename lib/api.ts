@@ -1,18 +1,20 @@
 import express from "express";
 import { DomainVerificationService } from "./service";
+import { setupEnvironment } from "./setup";
 
 const app = express();
 
 const verificationService = new DomainVerificationService();
 
-if (!process.env.SERVICE_HOST) {
-  throw new Error("SERVICE_HOST environment variable is not set");
-}
-
-// Your service hostname (what users will CNAME to)
-const SERVICE_HOST = process.env.SERVICE_HOST;
+const { serviceHost } = setupEnvironment();
 
 app.use(express.json());
+
+app.get("/", async (_, res) => {
+  res.json({
+    message: "Domain Verification Service is running",
+  });
+});
 
 // Start domain verification process
 app.post("/api/domains/verify", async (req, res) => {
@@ -22,7 +24,7 @@ app.post("/api/domains/verify", async (req, res) => {
     const token = verificationService.generateVerificationToken(domain, userId);
     const instructions = verificationService.getVerificationInstructions(
       domain,
-      SERVICE_HOST
+      serviceHost
     );
 
     res.json({
@@ -31,7 +33,7 @@ app.post("/api/domains/verify", async (req, res) => {
       instructions,
     });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(400).json({ error: (error as any)?.message });
   }
 });
 
@@ -42,11 +44,10 @@ app.post("/api/domains/check", async (req, res) => {
   try {
     const isVerified = await verificationService.completeDomainVerification(
       domain,
-      SERVICE_HOST
+      serviceHost
     );
 
     if (isVerified) {
-      // Here you would update Traefik configuration
       await updateAppDomainsConfig(domain);
 
       res.json({
@@ -58,12 +59,18 @@ app.post("/api/domains/check", async (req, res) => {
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error.message,
+      error: (error as any)?.message,
     });
   }
 });
 
-// Function to update Traefik configuration
+app.listen(4000, () => {
+  console.log(
+    "Domain Verification Service is running on http://localhost:4000"
+  );
+});
+
+// This should live on the Platform level, not in this service
 async function updateAppDomainsConfig(domain: string) {
   // 1. Update which domains the application can respond to on the Platform level
   // 2. Update the application's database to include the new domain associated with the user

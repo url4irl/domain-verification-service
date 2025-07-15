@@ -1,0 +1,16 @@
+services:
+  domain_verification_service_db:
+    image: postgres:16.4-alpine
+    container_name: domain_verification_service_db
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - domain_verification_service_db_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  domain_verification_service_db_postgres_data:
+    driver: local

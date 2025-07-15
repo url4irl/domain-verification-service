@@ -1,0 +1,613 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Domain Verification Service API",
+    "version": "0.1.0",
+    "description": "Verify and instruct domain configuration, enabling you to proceed pointing to them after DNS TXT record verification."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4000",
+      "description": "Development server"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Health check endpoint",
+        "description": "Returns the status of the Domain Verification Service with API documentation and endpoint information",
+        "operationId": "healthCheck",
+        "responses": {
+          "200": {
+            "description": "Service is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Domain Verification Service is running"
+                    },
+                    "documentation": {
+                      "type": "string",
+                      "example": "http://localhost:4000/docs"
+                    },
+                    "apiInfo": {
+                      "type": "object",
+                      "properties": {
+                        "note": {
+                          "type": "string",
+                          "example": "This SaaS service requires 'serviceHost' and 'txtRecordVerifyKey' parameters in API requests"
+                        },
+                        "endpoints": {
+                          "type": "object",
+                          "properties": {
+                            "verify": {
+                              "type": "string",
+                              "example": "POST /api/domains/verify - requires: domain, userId, serviceHost, txtRecordVerifyKey"
+                            },
+                            "check": {
+                              "type": "string",
+                              "example": "POST /api/domains/check - requires: domain, userId, serviceHost, txtRecordVerifyKey"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database connection failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "type": "string",
+                      "example": "Failed to connect to the database"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/domains/push": {
+      "post": {
+        "summary": "Register or update a domain configuration",
+        "description": "Register a new domain or update an existing domain with IP address",
+        "operationId": "registerDomain",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["domain", "ip"],
+                "properties": {
+                  "domain": {
+                    "type": "string",
+                    "description": "The domain to register (e.g., example.com)",
+                    "example": "example.com"
+                  },
+                  "ip": {
+                    "type": "string",
+                    "description": "The IP address to associate with the domain",
+                    "example": "192.168.1.1"
+                  },
+                  "userId": {
+                    "type": "string",
+                    "description": "The ID of the user registering the domain",
+                    "example": "user123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Domain registered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Domain registered successfully"
+                    },
+                    "domain": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "domain123"
+                        },
+                        "name": {
+                          "type": "string",
+                          "example": "example.com"
+                        },
+                        "ip": {
+                          "type": "string",
+                          "example": "192.168.1.1"
+                        },
+                        "userId": {
+                          "type": "string",
+                          "example": "user123"
+                        },
+                        "isVerified": {
+                          "type": "boolean",
+                          "example": false
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "type": "string",
+                      "example": "\"domain\" and \"ip\" address are required"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/domains/verify": {
+      "post": {
+        "summary": "Generate domain verification token",
+        "description": "Generates a verification token and provides DNS setup instructions for domain verification",
+        "operationId": "generateVerificationToken",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "domain",
+                  "userId",
+                  "serviceHost",
+                  "txtRecordVerifyKey"
+                ],
+                "properties": {
+                  "domain": {
+                    "type": "string",
+                    "description": "The domain to verify (e.g., example.com)",
+                    "example": "example.com"
+                  },
+                  "userId": {
+                    "type": "string",
+                    "description": "The ID of the user requesting verification",
+                    "example": "user123"
+                  },
+                  "serviceHost": {
+                    "type": "string",
+                    "description": "The service host that the domain should point to",
+                    "example": "your-service.com"
+                  },
+                  "txtRecordVerifyKey": {
+                    "type": "string",
+                    "description": "The verification key for TXT record validation",
+                    "example": "verify-key-123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Verification token generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "token": {
+                      "type": "string",
+                      "description": "The verification token to be added to DNS records",
+                      "example": "a1b2c3d4e5f6..."
+                    },
+                    "instructions": {
+                      "type": "object",
+                      "properties": {
+                        "step1": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "example": "TXT"
+                            },
+                            "name": {
+                              "type": "string",
+                              "example": "example.com"
+                            },
+                            "value": {
+                              "type": "string",
+                              "example": "url4irl-verify=a1b2c3d4e5f6..."
+                            },
+                            "instruction": {
+                              "type": "string",
+                              "example": "Add this TXT record to example.com"
+                            }
+                          }
+                        },
+                        "step2": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "example": "CNAME"
+                            },
+                            "name": {
+                              "type": "string",
+                              "example": "example.com"
+                            },
+                            "value": {
+                              "type": "string",
+                              "example": "your-service.com"
+                            },
+                            "instruction": {
+                              "type": "string",
+                              "example": "After TXT verification, point example.com to your-service.com"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "type": "string",
+                      "example": "\"domain\", \"userId\", \"serviceHost\", and \"txtRecordVerifyKey\" are required"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/domains/check": {
+      "post": {
+        "summary": "Check domain verification status",
+        "description": "Verifies that the domain has been properly configured with both TXT and CNAME records",
+        "operationId": "checkDomainVerification",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "domain",
+                  "userId",
+                  "serviceHost",
+                  "txtRecordVerifyKey"
+                ],
+                "properties": {
+                  "domain": {
+                    "type": "string",
+                    "description": "The domain to check verification status for",
+                    "example": "example.com"
+                  },
+                  "userId": {
+                    "type": "string",
+                    "description": "The ID of the user checking verification",
+                    "example": "user123"
+                  },
+                  "serviceHost": {
+                    "type": "string",
+                    "description": "The service host that the domain should point to",
+                    "example": "your-service.com"
+                  },
+                  "txtRecordVerifyKey": {
+                    "type": "string",
+                    "description": "The verification key for TXT record validation",
+                    "example": "verify-key-123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Domain verification successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Domain verified successfully"
+                    },
+                    "domain": {
+                      "type": "string",
+                      "example": "example.com"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Domain verification failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "type": "string",
+                      "examples": [
+                        "TXT record verification failed",
+                        "CNAME record verification failed",
+                        "No pending verification for this domain",
+                        "Verification token expired",
+                        "\"domain\", \"userId\", \"serviceHost\", and \"txtRecordVerifyKey\" are required"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/domains/status": {
+      "get": {
+        "summary": "Get domain status",
+        "description": "Retrieve the current status and verification state of a domain",
+        "operationId": "getDomainStatus",
+        "parameters": [
+          {
+            "name": "domain",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "example.com"
+            },
+            "description": "The domain to check status for"
+          },
+          {
+            "name": "userId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "user123"
+            },
+            "description": "The ID of the user requesting status"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domain status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "status": {
+                      "type": "object",
+                      "description": "Domain status information",
+                      "properties": {
+                        "domain": {
+                          "type": "string",
+                          "example": "example.com"
+                        },
+                        "isVerified": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "ip": {
+                          "type": "string",
+                          "example": "192.168.1.1"
+                        },
+                        "userId": {
+                          "type": "string",
+                          "example": "user123"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "type": "string",
+                      "example": "\"domain\" and \"userId\" query parameters are required"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Domain not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "type": "string",
+                      "example": "Domain not found"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          }
+        }
+      },
+      "DomainRegistration": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique domain identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Domain name"
+          },
+          "ip": {
+            "type": "string",
+            "description": "Associated IP address"
+          },
+          "userId": {
+            "type": "string",
+            "description": "User identifier"
+          },
+          "isVerified": {
+            "type": "boolean",
+            "description": "Verification status"
+          }
+        }
+      },
+      "VerificationInstructions": {
+        "type": "object",
+        "properties": {
+          "step1": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["TXT"]
+              },
+              "name": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              },
+              "instruction": {
+                "type": "string"
+              }
+            }
+          },
+          "step2": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["CNAME"]
+              },
+              "name": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              },
+              "instruction": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

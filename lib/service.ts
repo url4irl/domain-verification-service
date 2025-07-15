@@ -1,63 +1,194 @@
 import dns from "dns/promises";
 import crypto from "crypto";
-import { setupEnvironment } from "./setup";
-
-const { txtRecordVerifyKey } = setupEnvironment();
+import { eq, and } from "drizzle-orm";
+import { db } from "./db/db";
+import { domainsTable, verificationLogsTable } from "./db/schema";
 
 export class DomainVerificationService {
-  private pendingVerifications: Map<any, any>;
-  private verifiedDomains: Set<string>;
+  constructor() {}
 
-  constructor() {
-    this.pendingVerifications = new Map();
-    this.verifiedDomains = new Set();
+  async testDbConnection() {
+    try {
+      await db.select().from(domainsTable).limit(1);
+      return true;
+    } catch (error) {
+      throw new Error(`Database connection failed: ${(error as any)?.message}`);
+    }
   }
 
   /**
-   * Step 1: Generate verification token for domain
+   * Register or update a domain configuration
    */
-  generateVerificationToken(domain: string, userId: string) {
-    const token = crypto.randomBytes(32).toString("hex");
-    const verificationData = {
-      domain,
-      userId,
-      token,
-      createdAt: new Date(),
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-    };
+  async registerDomain(domain: string, ip: string, userId?: string) {
+    try {
+      // Check if domain already exists for this user
+      const existing = userId
+        ? await db
+            .select()
+            .from(domainsTable)
+            .where(
+              and(
+                eq(domainsTable.name, domain),
+                eq(domainsTable.userId, userId)
+              )
+            )
+            .limit(1)
+        : await db
+            .select()
+            .from(domainsTable)
+            .where(eq(domainsTable.name, domain))
+            .limit(1);
 
-    this.pendingVerifications.set(domain, verificationData);
-    return token;
+      if (existing.length > 0) {
+        // Update existing domain
+        const [updated] = await db
+          .update(domainsTable)
+          .set({
+            ip,
+            updatedAt: new Date(),
+            // Reset verification status when IP changes
+            isVerified: existing[0].ip === ip ? existing[0].isVerified : false,
+          })
+          .where(eq(domainsTable.id, existing[0].id))
+          .returning();
+
+        return updated;
+      } else {
+        // Create new domain
+        const [created] = await db
+          .insert(domainsTable)
+          .values({
+            name: domain,
+            ip,
+            userId,
+            isVerified: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .returning();
+
+        return created;
+      }
+    } catch (error) {
+      throw new Error(`Failed to register domain: ${(error as any)?.message}`);
+    }
+  }
+
+  /**
+   * Generate verification token for domain
+   */
+  async generateVerificationToken(domain: string, userId: string) {
+    try {
+      // Get the domain record
+      const [domainRecord] = await db
+        .select()
+        .from(domainsTable)
+        .where(
+          and(eq(domainsTable.name, domain), eq(domainsTable.userId, userId))
+        )
+        .limit(1);
+
+      if (!domainRecord) {
+        throw new Error("Domain not found. Please register the domain first.");
+      }
+
+      const token = crypto.randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+      // Update domain with verification token
+      await db
+        .update(domainsTable)
+        .set({
+          verificationToken: token,
+          tokenExpiresAt: expiresAt,
+          updatedAt: new Date(),
+        })
+        .where(eq(domainsTable.id, domainRecord.id));
+
+      // Log verification attempt
+      await db.insert(verificationLogsTable).values({
+        domainId: domainRecord.id,
+        userId,
+        verificationStep: "token_generated",
+        status: "pending",
+        details: "Verification token generated",
+        createdAt: new Date(),
+      });
+
+      return token;
+    } catch (error) {
+      throw new Error(
+        `Failed to generate verification token: ${(error as any)?.message}`
+      );
+    }
   }
 
   /**
    * Step 2: Verify TXT record exists
    */
-  async verifyTxtRecord(domain: string) {
-    const pending = this.pendingVerifications.get(domain);
-    if (!pending) {
-      throw new Error("No pending verification for this domain");
-    }
-
-    if (new Date() > pending.expiresAt) {
-      this.pendingVerifications.delete(domain);
-      throw new Error("Verification token expired");
-    }
-
+  async verifyTxtRecord(
+    domain: string,
+    userId: string,
+    txtRecordVerifyKey: string
+  ) {
     try {
+      // Get the domain record with verification token
+      const [domainRecord] = await db
+        .select()
+        .from(domainsTable)
+        .where(
+          and(eq(domainsTable.name, domain), eq(domainsTable.userId, userId))
+        )
+        .limit(1);
+
+      if (!domainRecord || !domainRecord.verificationToken) {
+        throw new Error("No pending verification for this domain");
+      }
+
+      if (
+        domainRecord.tokenExpiresAt &&
+        new Date() > domainRecord.tokenExpiresAt
+      ) {
+        await db
+          .update(domainsTable)
+          .set({ verificationToken: null, tokenExpiresAt: null })
+          .where(eq(domainsTable.id, domainRecord.id));
+        throw new Error("Verification token expired");
+      }
+
       // Look for TXT record at the root domain
       const records = await dns.resolveTxt(domain);
       const flatRecords = records.flat();
 
       // Check if our verification token exists
-      const expectedRecord = `${txtRecordVerifyKey}=${pending.token}`;
+      const expectedRecord = `${txtRecordVerifyKey}=${domainRecord.verificationToken}`;
       const isVerified = flatRecords.some((record) =>
         record.includes(expectedRecord)
       );
 
+      // Log verification attempt
+      await db.insert(verificationLogsTable).values({
+        domainId: domainRecord.id,
+        userId,
+        verificationStep: "txt_record",
+        status: isVerified ? "success" : "failed",
+        details: isVerified
+          ? "TXT record verification successful"
+          : "TXT record not found or invalid",
+        createdAt: new Date(),
+      });
+
       if (isVerified) {
-        this.verifiedDomains.add(domain);
-        this.pendingVerifications.delete(domain);
+        // Clear verification token after successful verification
+        await db
+          .update(domainsTable)
+          .set({
+            verificationToken: null,
+            tokenExpiresAt: null,
+            updatedAt: new Date(),
+          })
+          .where(eq(domainsTable.id, domainRecord.id));
+
         return true;
       }
 
@@ -71,10 +202,38 @@ export class DomainVerificationService {
   /**
    * Step 3: Verify CNAME points to your service
    */
-  async verifyCnameRecord(domain: string, expectedTarget: string) {
+  async verifyCnameRecord(
+    domain: string,
+    expectedTarget: string,
+    userId: string
+  ) {
     try {
       const records = await dns.resolveCname(domain);
-      return records.some((record) => record === expectedTarget);
+      const isVerified = records.some((record) => record === expectedTarget);
+
+      // Log verification attempt
+      const [domainRecord] = await db
+        .select()
+        .from(domainsTable)
+        .where(
+          and(eq(domainsTable.name, domain), eq(domainsTable.userId, userId))
+        )
+        .limit(1);
+
+      if (domainRecord) {
+        await db.insert(verificationLogsTable).values({
+          domainId: domainRecord.id,
+          userId,
+          verificationStep: "cname_record",
+          status: isVerified ? "success" : "failed",
+          details: isVerified
+            ? "CNAME record verification successful"
+            : "CNAME record not found or invalid",
+          createdAt: new Date(),
+        });
+      }
+
+      return isVerified;
     } catch (error) {
       console.error(`CNAME verification failed for ${domain}:`, error);
       return false;
@@ -84,17 +243,59 @@ export class DomainVerificationService {
   /**
    * Complete domain verification flow
    */
-  async completeDomainVerification(domain: string, serviceHost: string) {
+  async completeDomainVerification(
+    domain: string,
+    serviceHost: string,
+    userId: string,
+    txtRecordVerifyKey: string
+  ) {
     // First verify TXT record (proves ownership)
-    const txtVerified = await this.verifyTxtRecord(domain);
+    const txtVerified = await this.verifyTxtRecord(
+      domain,
+      userId,
+      txtRecordVerifyKey
+    );
     if (!txtVerified) {
       throw new Error("TXT record verification failed");
     }
 
     // Then verify CNAME points to your service
-    const cnameVerified = await this.verifyCnameRecord(domain, serviceHost);
+    const cnameVerified = await this.verifyCnameRecord(
+      domain,
+      serviceHost,
+      userId
+    );
     if (!cnameVerified) {
       throw new Error("CNAME record verification failed");
+    }
+
+    // Mark domain as verified
+    const [domainRecord] = await db
+      .select()
+      .from(domainsTable)
+      .where(
+        and(eq(domainsTable.name, domain), eq(domainsTable.userId, userId))
+      )
+      .limit(1);
+
+    if (domainRecord) {
+      await db
+        .update(domainsTable)
+        .set({
+          isVerified: true,
+          updatedAt: new Date(),
+        })
+        .where(eq(domainsTable.id, domainRecord.id));
+
+      // Log completion
+      await db.insert(verificationLogsTable).values({
+        domainId: domainRecord.id,
+        userId,
+        verificationStep: "completed",
+        status: "success",
+        details: "Domain verification completed successfully",
+        createdAt: new Date(),
+      });
     }
 
     return true;
@@ -103,9 +304,21 @@ export class DomainVerificationService {
   /**
    * Get verification instructions for user
    */
-  getVerificationInstructions(domain: string, serviceHost: string) {
-    const pending = this.pendingVerifications.get(domain);
-    if (!pending) {
+  async getVerificationInstructions(
+    domain: string,
+    serviceHost: string,
+    userId: string,
+    txtRecordVerifyKey: string
+  ) {
+    const [domainRecord] = await db
+      .select()
+      .from(domainsTable)
+      .where(
+        and(eq(domainsTable.name, domain), eq(domainsTable.userId, userId))
+      )
+      .limit(1);
+
+    if (!domainRecord || !domainRecord.verificationToken) {
       throw new Error("No pending verification for this domain");
     }
 
@@ -113,7 +326,7 @@ export class DomainVerificationService {
       step1: {
         type: "TXT",
         name: domain,
-        value: `${txtRecordVerifyKey}=${pending.token}`,
+        value: `${txtRecordVerifyKey}=${domainRecord.verificationToken}`,
         instruction: `Add this TXT record to ${domain}`,
       },
       step2: {
@@ -122,6 +335,32 @@ export class DomainVerificationService {
         value: serviceHost,
         instruction: `After TXT verification, point ${domain} to ${serviceHost}`,
       },
+    };
+  }
+
+  /**
+   * Get domain status and verification details
+   */
+  async getDomainStatus(domain: string, userId: string) {
+    const [domainRecord] = await db
+      .select()
+      .from(domainsTable)
+      .where(
+        and(eq(domainsTable.name, domain), eq(domainsTable.userId, userId))
+      )
+      .limit(1);
+
+    if (!domainRecord) {
+      throw new Error("Domain not found");
+    }
+
+    return {
+      domain: domainRecord.name,
+      ip: domainRecord.ip,
+      isVerified: domainRecord.isVerified,
+      hasActivePendingVerification: !!domainRecord.verificationToken,
+      createdAt: domainRecord.createdAt,
+      updatedAt: domainRecord.updatedAt,
     };
   }
 }

@@ -1,0 +1,52 @@
+# Use the official Node.js 20 image as the base
+FROM node:20-alpine
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Install pnpm globally
+RUN npm install -g pnpm@10.6.5
+
+# Copy package.json and pnpm-lock.yaml to leverage Docker cache layers
+COPY package.json pnpm-lock.yaml ./
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile --prod
+
+# Install TypeScript and ts-node for running TypeScript directly
+RUN pnpm add -g typescript ts-node
+
+# Copy the rest of the application code
+COPY . .
+
+# Create a non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+# Change ownership of the app directory to the nodejs user
+RUN chown -R nodejs:nodejs /app
+
+# Switch to the nodejs user
+USER nodejs
+
+# Expose the port the app runs on
+EXPOSE 4000
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=4000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "const http = require('http'); \
+               const options = { host: 'localhost', port: process.env.PORT || 4000, path: '/', timeout: 2000 }; \
+               const req = http.request(options, (res) => { \
+                 console.log('Health check passed'); \
+                 process.exit(res.statusCode === 200 ? 0 : 1); \
+               }); \
+               req.on('error', () => process.exit(1)); \
+               req.on('timeout', () => process.exit(1)); \
+               req.end();"
+
+# Start the application
+CMD ["pnpm", "start"]

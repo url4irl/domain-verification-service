@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Verify and instruct domain configuration, enabling you to proceed pointing to them after DNS TXT record verification",
   "scripts": {
+    "start": "ts-node lib/api.ts",
     "dev": "concurrently -n backend,db,db-studio -c blue.bold,cyan.bold,green.bold \"wait-on tcp:5432 && ts-node-dev --respawn --transpile-only lib/api.ts\" \"docker compose -f ./dev/docker-compose.yml up\" \"wait-on tcp:5432 && drizzle-kit studio\"",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "concurrently -n db,migration -c blue.bold,cyan.bold  \"wait-on tcp:5432 && drizzle-kit migrate\" \"docker compose -f ./dev/docker-compose.yml up\"",

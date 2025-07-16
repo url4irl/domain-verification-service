@@ -29,14 +29,14 @@ describe("DomainVerificationService Unit Tests", () => {
       const domain = await service.registerDomain(
         "test.com",
         "192.168.1.1",
-        "user1"
+        "customer1"
       );
 
       expect(domain).toEqual({
         id: expect.any(Number),
         name: "test.com",
         ip: "192.168.1.1",
-        userId: "user1",
+        customerId: "customer1",
         isVerified: false,
         verificationToken: null,
         tokenExpiresAt: null,
@@ -50,14 +50,14 @@ describe("DomainVerificationService Unit Tests", () => {
       const initial = await service.registerDomain(
         "test.com",
         "192.168.1.1",
-        "user1"
+        "customer1"
       );
 
       // Update with new IP
       const updated = await service.registerDomain(
         "test.com",
         "192.168.1.2",
-        "user1"
+        "customer1"
       );
 
       expect(updated.id).toBe(initial.id);
@@ -69,34 +69,34 @@ describe("DomainVerificationService Unit Tests", () => {
       const domain1 = await service.registerDomain(
         "test.com",
         "192.168.1.1",
-        "user1"
+        "customer1"
       );
       const domain2 = await service.registerDomain(
         "test.com",
         "192.168.1.2",
-        "user2"
+        "customer2"
       );
 
       expect(domain1.id).not.toBe(domain2.id);
-      expect(domain1.userId).toBe("user1");
-      expect(domain2.userId).toBe("user2");
+      expect(domain1.customerId).toBe("customer1");
+      expect(domain2.customerId).toBe("customer2");
     });
 
-    it("should register domain without userId", async () => {
+    it("should register domain without customerId", async () => {
       const domain = await service.registerDomain("test.com", "192.168.1.1");
 
-      expect(domain.userId).toBeNull();
+      expect(domain.customerId).toBeNull();
       expect(domain.name).toBe("test.com");
     });
 
     it("should allow empty domain names (handled by database constraints)", async () => {
-      const domain = await service.registerDomain("", "192.168.1.1", "user1");
+      const domain = await service.registerDomain("", "192.168.1.1", "customer1");
 
       expect(domain.name).toBe("");
     });
 
     it("should allow empty IP addresses (handled by database constraints)", async () => {
-      const domain = await service.registerDomain("test.com", "", "user1");
+      const domain = await service.registerDomain("test.com", "", "customer1");
 
       expect(domain.ip).toBe("");
     });
@@ -104,13 +104,13 @@ describe("DomainVerificationService Unit Tests", () => {
 
   describe("generateVerificationToken", () => {
     beforeEach(async () => {
-      await service.registerDomain("test.com", "192.168.1.1", "user1");
+      await service.registerDomain("test.com", "192.168.1.1", "customer1");
     });
 
     it("should generate verification token for existing domain", async () => {
       const token = await service.generateVerificationToken(
         "test.com",
-        "user1"
+        "customer1"
       );
 
       expect(token).toBeDefined();
@@ -120,18 +120,18 @@ describe("DomainVerificationService Unit Tests", () => {
 
     it("should throw error for non-existent domain", async () => {
       await expect(
-        service.generateVerificationToken("nonexistent.com", "user1")
+        service.generateVerificationToken("nonexistent.com", "customer1")
       ).rejects.toThrow("Domain not found");
     });
 
     it("should generate new token on subsequent calls", async () => {
       const token1 = await service.generateVerificationToken(
         "test.com",
-        "user1"
+        "customer1"
       );
       const token2 = await service.generateVerificationToken(
         "test.com",
-        "user1"
+        "customer1"
       );
 
       expect(token1).not.toBe(token2);
@@ -140,15 +140,15 @@ describe("DomainVerificationService Unit Tests", () => {
 
   describe("getVerificationInstructions", () => {
     beforeEach(async () => {
-      await service.registerDomain("test.com", "192.168.1.1", "user1");
-      await service.generateVerificationToken("test.com", "user1");
+      await service.registerDomain("test.com", "192.168.1.1", "customer1");
+      await service.generateVerificationToken("test.com", "customer1");
     });
 
     it("should return verification instructions", async () => {
       const instructions = await service.getVerificationInstructions(
         "test.com",
         "verification.example.com",
-        "user1",
+        "customer1",
         "verify-key-123"
       );
 
@@ -177,13 +177,13 @@ describe("DomainVerificationService Unit Tests", () => {
     });
 
     it("should throw error for domain without token", async () => {
-      await service.registerDomain("notoken.com", "192.168.1.1", "user1");
+      await service.registerDomain("notoken.com", "192.168.1.1", "customer1");
 
       await expect(
         service.getVerificationInstructions(
           "notoken.com",
           "verification.example.com",
-          "user1",
+          "customer1",
           "verify-key-123"
         )
       ).rejects.toThrow("No pending verification for this domain");
@@ -192,11 +192,11 @@ describe("DomainVerificationService Unit Tests", () => {
 
   describe("getDomainStatus", () => {
     beforeEach(async () => {
-      await service.registerDomain("test.com", "192.168.1.1", "user1");
+      await service.registerDomain("test.com", "192.168.1.1", "customer1");
     });
 
     it("should return domain status", async () => {
-      const status = await service.getDomainStatus("test.com", "user1");
+      const status = await service.getDomainStatus("test.com", "customer1");
 
       expect(status).toEqual({
         domain: "test.com",
@@ -209,15 +209,15 @@ describe("DomainVerificationService Unit Tests", () => {
     });
 
     it("should show token status when token exists", async () => {
-      await service.generateVerificationToken("test.com", "user1");
-      const status = await service.getDomainStatus("test.com", "user1");
+      await service.generateVerificationToken("test.com", "customer1");
+      const status = await service.getDomainStatus("test.com", "customer1");
 
       expect(status.hasActivePendingVerification).toBe(true);
     });
 
     it("should throw error for non-existent domain", async () => {
       await expect(
-        service.getDomainStatus("nonexistent.com", "user1")
+        service.getDomainStatus("nonexistent.com", "customer1")
       ).rejects.toThrow("Domain not found");
     });
   });
@@ -228,14 +228,14 @@ describe("DomainVerificationService Unit Tests", () => {
       // For now, we'll test that the service handles errors properly
 
       await expect(
-        service.registerDomain("test.com", "192.168.1.1", "user1")
+        service.registerDomain("test.com", "192.168.1.1", "customer1")
       ).resolves.toBeDefined();
     });
 
     it("should handle concurrent domain registrations", async () => {
       const promises = [
-        service.registerDomain("concurrent.com", "192.168.1.1", "user1"),
-        service.registerDomain("concurrent.com", "192.168.1.2", "user1"),
+        service.registerDomain("concurrent.com", "192.168.1.1", "customer1"),
+        service.registerDomain("concurrent.com", "192.168.1.2", "customer1"),
       ];
 
       const results = await Promise.allSettled(promises);
@@ -252,20 +252,20 @@ describe("DomainVerificationService Unit Tests", () => {
       const domain = await service.registerDomain(
         longDomain,
         "192.168.1.1",
-        "user1"
+        "customer1"
       );
       expect(domain.name).toBe(longDomain);
     });
 
-    it("should handle special characters in userId", async () => {
-      const specialUserId = "user@example.com";
+    it("should handle special characters in customerId", async () => {
+      const specialCustomerId = "customer@example.com";
       const domain = await service.registerDomain(
         "test.com",
         "192.168.1.1",
-        specialUserId
+        specialCustomerId
       );
 
-      expect(domain.userId).toBe(specialUserId);
+      expect(domain.customerId).toBe(specialCustomerId);
     });
   });
 });

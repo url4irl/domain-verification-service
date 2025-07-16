@@ -14,7 +14,7 @@ export const domainsTable = pgTable(
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
     name: varchar({ length: 255 }).notNull(),
     ip: varchar({ length: 255 }).notNull(),
-    userId: varchar({ length: 255 }),
+    customerId: varchar({ length: 255 }),
     isVerified: boolean().default(false).notNull(),
     verificationToken: varchar({ length: 64 }),
     tokenExpiresAt: timestamp(),
@@ -22,8 +22,8 @@ export const domainsTable = pgTable(
     updatedAt: timestamp().defaultNow().notNull(),
   },
   (table) => ({
-    // Ensure domain + userId combination is unique
-    uniqueDomainUser: unique().on(table.name, table.userId),
+    // Ensure domain + customerId combination is unique
+    uniqueDomainCustomer: unique().on(table.name, table.customerId),
   })
 );
 
@@ -32,7 +32,7 @@ export const verificationLogsTable = pgTable("verification_logs", {
   domainId: integer()
     .references(() => domainsTable.id)
     .notNull(),
-  userId: varchar({ length: 255 }).notNull(),
+  customerId: varchar({ length: 255 }).notNull(),
   verificationStep: varchar({ length: 50 }).notNull(), // 'txt_record', 'cname_record', 'completed'
   status: varchar({ length: 20 }).notNull(), // 'pending', 'success', 'failed'
   details: text(),

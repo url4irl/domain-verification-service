@@ -10,8 +10,3 @@ if (!process.env.DATABASE_URL?.includes("test")) {
     "Test environment must use a test database. Check .env.test file."
   );
 }
-
-console.log(
-  "Test environment loaded with DATABASE_URL:",
-  process.env.DATABASE_URL
-);

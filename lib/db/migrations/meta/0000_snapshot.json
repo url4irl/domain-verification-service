@@ -1,5 +1,5 @@
 {
-  "id": "13ec2bb9-aa8f-4788-a0c2-281ef9e7124f",
+  "id": "cf76c2ae-ab99-4ec6-ba1f-7e41899cebcf",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -37,8 +37,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "userId": {
-          "name": "userId",
+        "customerId": {
+          "name": "customerId",
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
@@ -81,12 +81,12 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "domains_name_userId_unique": {
-          "name": "domains_name_userId_unique",
+        "domains_name_customerId_unique": {
+          "name": "domains_name_customerId_unique",
           "nullsNotDistinct": false,
           "columns": [
             "name",
-            "userId"
+            "customerId"
           ]
         }
       },
@@ -121,8 +121,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "userId": {
-          "name": "userId",
+        "customerId": {
+          "name": "customerId",
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true

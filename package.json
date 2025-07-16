@@ -7,10 +7,11 @@
     "dev": "concurrently -n backend,db,db-studio -c blue.bold,cyan.bold,green.bold \"wait-on tcp:5432 && ts-node-dev --respawn --transpile-only lib/api.ts\" \"docker compose -f ./dev/docker-compose.yml up\" \"wait-on tcp:5432 && drizzle-kit studio\"",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "concurrently -n db,migration -c blue.bold,cyan.bold  \"wait-on tcp:5432 && drizzle-kit migrate\" \"docker compose -f ./dev/docker-compose.yml up\"",
-    "test": "pnpm run test:setup && jest && pnpm run test:teardown",
+    "db:cleanup": "./dev/clean-db.sh",
+    "test": "pnpm run test:setup && DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres_test jest && pnpm run test:teardown",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:setup": "docker compose -f ./dev/docker-compose.yml up -d && wait-on tcp:5432 && npm run db:setup-test",
+    "test:setup": "./scripts/setup-test.sh",
     "test:teardown": "docker compose -f ./dev/docker-compose.yml down",
     "db:setup-test": "DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres_test drizzle-kit migrate"
   },

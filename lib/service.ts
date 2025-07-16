@@ -19,17 +19,17 @@ export class DomainVerificationService {
   /**
    * Register or update a domain configuration
    */
-  async registerDomain(domain: string, ip: string, userId?: string) {
+  async registerDomain(domain: string, ip: string, customerId?: string) {
     try {
       // Check if domain already exists for this user
-      const existing = userId
+      const existing = customerId
         ? await db
             .select()
             .from(domainsTable)
             .where(
               and(
                 eq(domainsTable.name, domain),
-                eq(domainsTable.userId, userId)
+                eq(domainsTable.customerId, customerId)
               )
             )
             .limit(1)
@@ -60,7 +60,7 @@ export class DomainVerificationService {
           .values({
             name: domain,
             ip,
-            userId,
+            customerId,
             isVerified: false,
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -77,14 +77,14 @@ export class DomainVerificationService {
   /**
    * Generate verification token for domain
    */
-  async generateVerificationToken(domain: string, userId: string) {
+  async generateVerificationToken(domain: string, customerId: string) {
     try {
       // Get the domain record
       const [domainRecord] = await db
         .select()
         .from(domainsTable)
         .where(
-          and(eq(domainsTable.name, domain), eq(domainsTable.userId, userId))
+          and(eq(domainsTable.name, domain), eq(domainsTable.customerId, customerId))
         )
         .limit(1);
 
@@ -108,7 +108,7 @@ export class DomainVerificationService {
       // Log verification attempt
       await db.insert(verificationLogsTable).values({
         domainId: domainRecord.id,
-        userId,
+        customerId,
         verificationStep: "token_generated",
         status: "pending",
         details: "Verification token generated",
@@ -128,7 +128,7 @@ export class DomainVerificationService {
    */
   async verifyTxtRecord(
     domain: string,
-    userId: string,
+    customerId: string,
     txtRecordVerifyKey: string
   ) {
     try {
@@ -137,7 +137,7 @@ export class DomainVerificationService {
         .select()
         .from(domainsTable)
         .where(
-          and(eq(domainsTable.name, domain), eq(domainsTable.userId, userId))
+          and(eq(domainsTable.name, domain), eq(domainsTable.customerId, customerId))
         )
         .limit(1);
 
@@ -169,7 +169,7 @@ export class DomainVerificationService {
       // Log verification attempt
       await db.insert(verificationLogsTable).values({
         domainId: domainRecord.id,
-        userId,
+        customerId,
         verificationStep: "txt_record",
         status: isVerified ? "success" : "failed",
         details: isVerified
@@ -205,7 +205,7 @@ export class DomainVerificationService {
   async verifyCnameRecord(
     domain: string,
     expectedTarget: string,
-    userId: string
+    customerId: string
   ) {
     try {
       const records = await dns.resolveCname(domain);
@@ -216,14 +216,14 @@ export class DomainVerificationService {
         .select()
         .from(domainsTable)
         .where(
-          and(eq(domainsTable.name, domain), eq(domainsTable.userId, userId))
+          and(eq(domainsTable.name, domain), eq(domainsTable.customerId, customerId))
         )
         .limit(1);
 
       if (domainRecord) {
         await db.insert(verificationLogsTable).values({
           domainId: domainRecord.id,
-          userId,
+          customerId,
           verificationStep: "cname_record",
           status: isVerified ? "success" : "failed",
           details: isVerified
@@ -246,13 +246,13 @@ export class DomainVerificationService {
   async completeDomainVerification(
     domain: string,
     serviceHost: string,
-    userId: string,
+    customerId: string,
     txtRecordVerifyKey: string
   ) {
     // First verify TXT record (proves ownership)
     const txtVerified = await this.verifyTxtRecord(
       domain,
-      userId,
+      customerId,
       txtRecordVerifyKey
     );
     if (!txtVerified) {
@@ -263,7 +263,7 @@ export class DomainVerificationService {
     const cnameVerified = await this.verifyCnameRecord(
       domain,
       serviceHost,
-      userId
+      customerId
     );
     if (!cnameVerified) {
       throw new Error("CNAME record verification failed");
@@ -274,7 +274,7 @@ export class DomainVerificationService {
       .select()
       .from(domainsTable)
       .where(
-        and(eq(domainsTable.name, domain), eq(domainsTable.userId, userId))
+        and(eq(domainsTable.name, domain), eq(domainsTable.customerId, customerId))
       )
       .limit(1);
 
@@ -290,7 +290,7 @@ export class DomainVerificationService {
       // Log completion
       await db.insert(verificationLogsTable).values({
         domainId: domainRecord.id,
-        userId,
+        customerId,
         verificationStep: "completed",
         status: "success",
         details: "Domain verification completed successfully",
@@ -307,14 +307,14 @@ export class DomainVerificationService {
   async getVerificationInstructions(
     domain: string,
     serviceHost: string,
-    userId: string,
+    customerId: string,
     txtRecordVerifyKey: string
   ) {
     const [domainRecord] = await db
       .select()
       .from(domainsTable)
       .where(
-        and(eq(domainsTable.name, domain), eq(domainsTable.userId, userId))
+        and(eq(domainsTable.name, domain), eq(domainsTable.customerId, customerId))
       )
       .limit(1);
 
@@ -341,12 +341,12 @@ export class DomainVerificationService {
   /**
    * Get domain status and verification details
    */
-  async getDomainStatus(domain: string, userId: string) {
+  async getDomainStatus(domain: string, customerId: string) {
     const [domainRecord] = await db
       .select()
       .from(domainsTable)
       .where(
-        and(eq(domainsTable.name, domain), eq(domainsTable.userId, userId))
+        and(eq(domainsTable.name, domain), eq(domainsTable.customerId, customerId))
       )
       .limit(1);
 

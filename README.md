@@ -3,6 +3,7 @@
 Verify and instruct domain configuration, enabling you to proceed pointing to them after DNS TXT record verification.
 
 - [How to use this service](#how-to-use-this-service)
+- [Flow Diagram](#flow-diagram)
 - [API Documentation](#api-documentation)
 - [MCP Server (work in progress)](#mcp-server-work-in-progress)
 - [Development](#development)
@@ -12,10 +13,49 @@ Verify and instruct domain configuration, enabling you to proceed pointing to th
 
 ## How to use this service
 
-1. Register your domain by sending a POST request to `/api/domains/push` with the domain name and IP address.
-2. Create the domain configuration instructions for a specific user by sending a POST request to `/api/domains/verify` with the domain name and an user ID.
-3. Check if a domain is configured as expected by sending a GET request to `/api/domains/check` with the domain name and an user ID.
-4. Proceed to change your infrastructure/application/service to use the verified domain.
+This service is designed for a "User" (e.g., a service or backend) that manages domains on behalf of its "Customers" (the end-users who own the domains).
+
+1.  **User:** Register a customer's domain by sending a `POST` request to `/api/domains/push` with the domain name and IP address.
+2.  **User:** Request domain verification for a customer by sending a `POST` request to `/api/domains/verify` with the domain name and the customer's ID. The service returns a unique TXT record.
+3.  **User & Customer:** The User presents the TXT record instructions to the Customer. The Customer must then manually add this TXT record to their domain's DNS settings.
+4.  **User:** Periodically check if the domain is verified by sending a `GET` request to `/api/domains/check` with the domain name and customer ID.
+5.  **User:** Once verified, the User can proceed to change its infrastructure/application/service to use the verified domain for the customer.
+
+## Flow Diagram
+
+```mermaid
+sequenceDiagram
+    participant User as User (integrating service)
+    participant Customer as Customer (domain owner)
+    participant Service as domain-verification-service
+    participant Database
+
+    User->>+Service: POST /api/domains/push (domain, ip)
+    Service->>+Database: Store domain and IP
+    Database-->>-Service: Domain registered
+    Service-->>-User: Returns success
+
+    User->>+Service: POST /api/domains/verify (domain, customerId)
+    Service->>Service: Generate TXT record value
+    Service->>+Database: Store TXT record for domain and customer
+    Database-->>-Service: Record stored
+    Service-->>-User: Returns TXT record instructions
+
+    User->>Customer: Present TXT record for manual DNS update
+    Customer->>Customer: Manually create TXT record in DNS provider
+
+    loop Verification Check
+        User->>+Service: GET /api/domains/check (domain, customerId)
+        Service->>+Database: Get expected TXT record
+        Database-->>-Service: Returns TXT record
+        Service->>Service: Perform DNS lookup for TXT record
+        Service->>+Database: Update verification status
+        Database-->>-Service: Status updated
+        Service-->>-User: Returns verification status
+    end
+
+    Note over User: Once verified, proceed to use the domain.
+```
 
 ## API Documentation
 

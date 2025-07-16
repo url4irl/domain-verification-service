@@ -42,9 +42,9 @@ export function createApp(enableSwagger: boolean = true) {
         note: "This SaaS service requires 'serviceHost' and 'txtRecordVerifyKey' parameters in API requests",
         endpoints: {
           verify:
-            "POST /api/domains/verify - requires: domain, userId, serviceHost, txtRecordVerifyKey",
+            "POST /api/domains/verify - requires: domain, customerId, serviceHost, txtRecordVerifyKey",
           check:
-            "POST /api/domains/check - requires: domain, userId, serviceHost, txtRecordVerifyKey",
+            "POST /api/domains/check - requires: domain, customerId, serviceHost, txtRecordVerifyKey",
         },
       },
     });
@@ -52,7 +52,7 @@ export function createApp(enableSwagger: boolean = true) {
 
   // Register or update a domain configuration
   app.post("/api/domains/push", async (req, res) => {
-    const { domain, ip, userId } = req.body;
+    const { domain, ip, customerId } = req.body;
 
     if (!domain || !ip) {
       return res.status(400).json({
@@ -65,7 +65,7 @@ export function createApp(enableSwagger: boolean = true) {
       const domainRecord = await verificationService.registerDomain(
         domain,
         ip,
-        userId
+        customerId
       );
 
       res.json({
@@ -75,7 +75,7 @@ export function createApp(enableSwagger: boolean = true) {
           id: domainRecord.id,
           name: domainRecord.name,
           ip: domainRecord.ip,
-          userId: domainRecord.userId,
+          customerId: domainRecord.customerId,
           isVerified: domainRecord.isVerified,
         },
       });
@@ -88,25 +88,25 @@ export function createApp(enableSwagger: boolean = true) {
   });
 
   app.post("/api/domains/verify", async (req, res) => {
-    const { domain, userId, serviceHost, txtRecordVerifyKey } = req.body;
+    const { domain, customerId, serviceHost, txtRecordVerifyKey } = req.body;
 
-    if (!domain || !userId || !serviceHost || !txtRecordVerifyKey) {
+    if (!domain || !customerId || !serviceHost || !txtRecordVerifyKey) {
       return res.status(400).json({
         success: false,
-        error: `"domain", "userId", "serviceHost", and "txtRecordVerifyKey" are required`,
+        error: `"domain", "customerId", "serviceHost", and "txtRecordVerifyKey" are required`,
       });
     }
 
     try {
       const token = await verificationService.generateVerificationToken(
         domain,
-        userId
+        customerId
       );
       const instructions =
         await verificationService.getVerificationInstructions(
           domain,
           serviceHost,
-          userId,
+          customerId,
           txtRecordVerifyKey
         );
 
@@ -125,12 +125,12 @@ export function createApp(enableSwagger: boolean = true) {
 
   // Check verification status
   app.post("/api/domains/check", async (req, res) => {
-    const { domain, userId, serviceHost, txtRecordVerifyKey } = req.body;
+    const { domain, customerId, serviceHost, txtRecordVerifyKey } = req.body;
 
-    if (!domain || !userId || !serviceHost || !txtRecordVerifyKey) {
+    if (!domain || !customerId || !serviceHost || !txtRecordVerifyKey) {
       return res.status(400).json({
         success: false,
-        error: `"domain", "userId", "serviceHost", and "txtRecordVerifyKey" are required`,
+        error: `"domain", "customerId", "serviceHost", and "txtRecordVerifyKey" are required`,
       });
     }
 
@@ -138,7 +138,7 @@ export function createApp(enableSwagger: boolean = true) {
       const isVerified = await verificationService.completeDomainVerification(
         domain,
         serviceHost,
-        userId,
+        customerId,
         txtRecordVerifyKey
       );
 
@@ -159,19 +159,19 @@ export function createApp(enableSwagger: boolean = true) {
 
   // Get domain status
   app.get("/api/domains/status", async (req, res) => {
-    const { domain, userId } = req.query;
+    const { domain, customerId } = req.query;
 
-    if (!domain || !userId) {
+    if (!domain || !customerId) {
       return res.status(400).json({
         success: false,
-        error: `"domain" and "userId" query parameters are required`,
+        error: `"domain" and "customerId" query parameters are required`,
       });
     }
 
     try {
       const status = await verificationService.getDomainStatus(
         domain as string,
-        userId as string
+        customerId as string
       );
 
       return res.json({

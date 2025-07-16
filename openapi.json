@@ -45,11 +45,11 @@
                           "properties": {
                             "verify": {
                               "type": "string",
-                              "example": "POST /api/domains/verify - requires: domain, userId, serviceHost, txtRecordVerifyKey"
+                              "example": "POST /api/domains/verify - requires: domain, customerId, serviceHost, txtRecordVerifyKey"
                             },
                             "check": {
                               "type": "string",
-                              "example": "POST /api/domains/check - requires: domain, userId, serviceHost, txtRecordVerifyKey"
+                              "example": "POST /api/domains/check - requires: domain, customerId, serviceHost, txtRecordVerifyKey"
                             }
                           }
                         }
@@ -106,7 +106,7 @@
                     "description": "The IP address to associate with the domain",
                     "example": "192.168.1.1"
                   },
-                  "userId": {
+                  "customerId": {
                     "type": "string",
                     "description": "The ID of the user registering the domain",
                     "example": "user123"
@@ -147,7 +147,7 @@
                           "type": "string",
                           "example": "192.168.1.1"
                         },
-                        "userId": {
+                        "customerId": {
                           "type": "string",
                           "example": "user123"
                         },
@@ -198,7 +198,7 @@
                 "type": "object",
                 "required": [
                   "domain",
-                  "userId",
+                  "customerId",
                   "serviceHost",
                   "txtRecordVerifyKey"
                 ],
@@ -208,7 +208,7 @@
                     "description": "The domain to verify (e.g., example.com)",
                     "example": "example.com"
                   },
-                  "userId": {
+                  "customerId": {
                     "type": "string",
                     "description": "The ID of the user requesting verification",
                     "example": "user123"
@@ -310,7 +310,7 @@
                     },
                     "error": {
                       "type": "string",
-                      "example": "\"domain\", \"userId\", \"serviceHost\", and \"txtRecordVerifyKey\" are required"
+                      "example": "\"domain\", \"customerId\", \"serviceHost\", and \"txtRecordVerifyKey\" are required"
                     }
                   }
                 }
@@ -333,7 +333,7 @@
                 "type": "object",
                 "required": [
                   "domain",
-                  "userId",
+                  "customerId",
                   "serviceHost",
                   "txtRecordVerifyKey"
                 ],
@@ -343,7 +343,7 @@
                     "description": "The domain to check verification status for",
                     "example": "example.com"
                   },
-                  "userId": {
+                  "customerId": {
                     "type": "string",
                     "description": "The ID of the user checking verification",
                     "example": "user123"
@@ -406,7 +406,7 @@
                         "CNAME record verification failed",
                         "No pending verification for this domain",
                         "Verification token expired",
-                        "\"domain\", \"userId\", \"serviceHost\", and \"txtRecordVerifyKey\" are required"
+                        "\"domain\", \"customerId\", \"serviceHost\", and \"txtRecordVerifyKey\" are required"
                       ]
                     }
                   }
@@ -434,7 +434,7 @@
             "description": "The domain to check status for"
           },
           {
-            "name": "userId",
+            "name": "customerId",
             "in": "query",
             "required": true,
             "schema": {
@@ -472,7 +472,7 @@
                           "type": "string",
                           "example": "192.168.1.1"
                         },
-                        "userId": {
+                        "customerId": {
                           "type": "string",
                           "example": "user123"
                         }
@@ -496,7 +496,7 @@
                     },
                     "error": {
                       "type": "string",
-                      "example": "\"domain\" and \"userId\" query parameters are required"
+                      "example": "\"domain\" and \"customerId\" query parameters are required"
                     }
                   }
                 }
@@ -557,7 +557,7 @@
             "type": "string",
             "description": "Associated IP address"
           },
-          "userId": {
+          "customerId": {
             "type": "string",
             "description": "User identifier"
           },

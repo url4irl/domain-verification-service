@@ -32,9 +32,9 @@ describe("Domain Verification Service E2E Tests", () => {
           note: "This SaaS service requires 'serviceHost' and 'txtRecordVerifyKey' parameters in API requests",
           endpoints: {
             verify:
-              "POST /api/domains/verify - requires: domain, userId, serviceHost, txtRecordVerifyKey",
+              "POST /api/domains/verify - requires: domain, customerId, serviceHost, txtRecordVerifyKey",
             check:
-              "POST /api/domains/check - requires: domain, userId, serviceHost, txtRecordVerifyKey",
+              "POST /api/domains/check - requires: domain, customerId, serviceHost, txtRecordVerifyKey",
           },
         },
       });
@@ -46,7 +46,7 @@ describe("Domain Verification Service E2E Tests", () => {
       const domainData = {
         domain: "example.com",
         ip: "192.168.1.1",
-        userId: "user123",
+        customerId: "customer123",
       };
 
       const response = await request(app)
@@ -61,7 +61,7 @@ describe("Domain Verification Service E2E Tests", () => {
           id: expect.any(Number),
           name: "example.com",
           ip: "192.168.1.1",
-          userId: "user123",
+          customerId: "customer123",
           isVerified: false,
         },
       });
@@ -71,7 +71,7 @@ describe("Domain Verification Service E2E Tests", () => {
       const domainData = {
         domain: "example.com",
         ip: "192.168.1.1",
-        userId: "user123",
+        customerId: "customer123",
       };
 
       // Register domain first time
@@ -95,7 +95,7 @@ describe("Domain Verification Service E2E Tests", () => {
     it("should return 400 when domain is missing", async () => {
       const response = await request(app)
         .post("/api/domains/push")
-        .send({ ip: "192.168.1.1", userId: "user123" })
+        .send({ ip: "192.168.1.1", customerId: "customer123" })
         .expect(400);
 
       expect(response.body).toEqual({
@@ -107,7 +107,7 @@ describe("Domain Verification Service E2E Tests", () => {
     it("should return 400 when ip is missing", async () => {
       const response = await request(app)
         .post("/api/domains/push")
-        .send({ domain: "example.com", userId: "user123" })
+        .send({ domain: "example.com", customerId: "customer123" })
         .expect(400);
 
       expect(response.body).toEqual({
@@ -116,7 +116,7 @@ describe("Domain Verification Service E2E Tests", () => {
       });
     });
 
-    it("should register domain without userId", async () => {
+    it("should register domain without customerId", async () => {
       const domainData = {
         domain: "example.com",
         ip: "192.168.1.1",
@@ -127,7 +127,7 @@ describe("Domain Verification Service E2E Tests", () => {
         .send(domainData)
         .expect(200);
 
-      expect(response.body.domain.userId).toBeNull();
+      expect(response.body.domain.customerId).toBeNull();
     });
   });
 
@@ -137,14 +137,14 @@ describe("Domain Verification Service E2E Tests", () => {
       await request(app).post("/api/domains/push").send({
         domain: "example.com",
         ip: "192.168.1.1",
-        userId: "user123",
+        customerId: "customer123",
       });
     });
 
     it("should generate verification token and instructions", async () => {
       const verifyData = {
         domain: "example.com",
-        userId: "user123",
+        customerId: "customer123",
         serviceHost: "verification.example.com",
         txtRecordVerifyKey: "verify123",
       };
@@ -180,7 +180,7 @@ describe("Domain Verification Service E2E Tests", () => {
     it("should return 400 when required fields are missing", async () => {
       const testCases = [
         {
-          userId: "user123",
+          customerId: "customer123",
           serviceHost: "verification.example.com",
           txtRecordVerifyKey: "verify123",
         },
@@ -191,12 +191,12 @@ describe("Domain Verification Service E2E Tests", () => {
         },
         {
           domain: "example.com",
-          userId: "user123",
+          customerId: "customer123",
           txtRecordVerifyKey: "verify123",
         },
         {
           domain: "example.com",
-          userId: "user123",
+          customerId: "customer123",
           serviceHost: "verification.example.com",
         },
       ];
@@ -210,7 +210,7 @@ describe("Domain Verification Service E2E Tests", () => {
         expect(response.body).toEqual({
           success: false,
           error:
-            '"domain", "userId", "serviceHost", and "txtRecordVerifyKey" are required',
+            '"domain", "customerId", "serviceHost", and "txtRecordVerifyKey" are required',
         });
       }
     });
@@ -222,12 +222,12 @@ describe("Domain Verification Service E2E Tests", () => {
       await request(app).post("/api/domains/push").send({
         domain: "example.com",
         ip: "192.168.1.1",
-        userId: "user123",
+        customerId: "customer123",
       });
 
       await request(app).post("/api/domains/verify").send({
         domain: "example.com",
-        userId: "user123",
+        customerId: "customer123",
         serviceHost: "verification.example.com",
         txtRecordVerifyKey: "verify123",
       });
@@ -236,7 +236,7 @@ describe("Domain Verification Service E2E Tests", () => {
     it("should return 400 when required fields are missing", async () => {
       const testCases = [
         {
-          userId: "user123",
+          customerId: "customer123",
           serviceHost: "verification.example.com",
           txtRecordVerifyKey: "verify123",
         },
@@ -247,12 +247,12 @@ describe("Domain Verification Service E2E Tests", () => {
         },
         {
           domain: "example.com",
-          userId: "user123",
+          customerId: "customer123",
           txtRecordVerifyKey: "verify123",
         },
         {
           domain: "example.com",
-          userId: "user123",
+          customerId: "customer123",
           serviceHost: "verification.example.com",
         },
       ];
@@ -266,7 +266,7 @@ describe("Domain Verification Service E2E Tests", () => {
         expect(response.body).toEqual({
           success: false,
           error:
-            '"domain", "userId", "serviceHost", and "txtRecordVerifyKey" are required',
+            '"domain", "customerId", "serviceHost", and "txtRecordVerifyKey" are required',
         });
       }
     });
@@ -274,7 +274,7 @@ describe("Domain Verification Service E2E Tests", () => {
     it("should handle verification check (will fail DNS lookup in test environment)", async () => {
       const checkData = {
         domain: "example.com",
-        userId: "user123",
+        customerId: "customer123",
         serviceHost: "verification.example.com",
         txtRecordVerifyKey: "verify123",
       };
@@ -296,14 +296,14 @@ describe("Domain Verification Service E2E Tests", () => {
       await request(app).post("/api/domains/push").send({
         domain: "example.com",
         ip: "192.168.1.1",
-        userId: "user123",
+        customerId: "customer123",
       });
     });
 
     it("should return domain status", async () => {
       const response = await request(app)
         .get("/api/domains/status")
-        .query({ domain: "example.com", userId: "user123" })
+        .query({ domain: "example.com", customerId: "customer123" })
         .expect(200);
 
       expect(response.body).toEqual({
@@ -322,16 +322,16 @@ describe("Domain Verification Service E2E Tests", () => {
     it("should return 400 when domain query parameter is missing", async () => {
       const response = await request(app)
         .get("/api/domains/status")
-        .query({ userId: "user123" })
+        .query({ customerId: "customer123" })
         .expect(400);
 
       expect(response.body).toEqual({
         success: false,
-        error: '"domain" and "userId" query parameters are required',
+        error: '"domain" and "customerId" query parameters are required',
       });
     });
 
-    it("should return 400 when userId query parameter is missing", async () => {
+    it("should return 400 when customerId query parameter is missing", async () => {
       const response = await request(app)
         .get("/api/domains/status")
         .query({ domain: "example.com" })
@@ -339,14 +339,14 @@ describe("Domain Verification Service E2E Tests", () => {
 
       expect(response.body).toEqual({
         success: false,
-        error: '"domain" and "userId" query parameters are required',
+        error: '"domain" and "customerId" query parameters are required',
       });
     });
 
     it("should return 404 when domain is not found", async () => {
       const response = await request(app)
         .get("/api/domains/status")
-        .query({ domain: "nonexistent.com", userId: "user123" })
+        .query({ domain: "nonexistent.com", customerId: "customer123" })
         .expect(404);
 
       expect(response.body.success).toBe(false);
@@ -357,13 +357,13 @@ describe("Domain Verification Service E2E Tests", () => {
   describe("Integration Flow", () => {
     it("should complete full domain registration and verification flow", async () => {
       const domain = "integration-test.com";
-      const userId = "integration-user";
+      const customerId = "integration-customer";
       const ip = "10.0.0.1";
 
       // Step 1: Register domain
       const registerResponse = await request(app)
         .post("/api/domains/push")
-        .send({ domain, ip, userId })
+        .send({ domain, ip, customerId })
         .expect(200);
 
       expect(registerResponse.body.success).toBe(true);
@@ -374,7 +374,7 @@ describe("Domain Verification Service E2E Tests", () => {
         .post("/api/domains/verify")
         .send({
           domain,
-          userId,
+          customerId,
           serviceHost: "verify.example.com",
           txtRecordVerifyKey: "key123",
         })
@@ -386,7 +386,7 @@ describe("Domain Verification Service E2E Tests", () => {
       // Step 3: Check domain status
       const statusResponse = await request(app)
         .get("/api/domains/status")
-        .query({ domain, userId })
+        .query({ domain, customerId })
         .expect(200);
 
       expect(statusResponse.body.status.domain).toBe(domain);
@@ -395,7 +395,7 @@ describe("Domain Verification Service E2E Tests", () => {
       // Step 4: Update domain with new IP
       const updateResponse = await request(app)
         .post("/api/domains/push")
-        .send({ domain, ip: "10.0.0.2", userId })
+        .send({ domain, ip: "10.0.0.2", customerId })
         .expect(200);
 
       expect(updateResponse.body.domain.ip).toBe("10.0.0.2");

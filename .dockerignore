@@ -13,7 +13,7 @@ dev/
 tests/
 scripts/
 jest.config.js
-tsconfig.json
+
 .vscode/
 .idea/
 *.test.ts

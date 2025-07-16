@@ -10,6 +10,7 @@ Verify and instruct domain configuration, enabling you to proceed pointing to th
 - [Testing](#testing)
   - [Test Database Management](#test-database-management)
   - [Test Scenarios](#test-scenarios)
+- [Deployment](#deployment)
 
 ## How to use this service
 
@@ -118,6 +119,10 @@ Each test automatically:
 - ✅ Edge cases and error conditions
 - ✅ Concurrent operations
 - ✅ Data cleanup and isolation
+
+## Deployment
+
+This project is deployed to a Coolify instance. When code changes are pushed to the repository, Coolify automatically rebuilds the project using the `Dockerfile` and deploys the updated service.
 
 
 Contributions are always welcome ❤️

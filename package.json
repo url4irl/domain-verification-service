@@ -1,6 +1,6 @@
 {
   "name": "domain-verification-service",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Verify and instruct domain configuration, enabling you to proceed pointing to them after DNS TXT record verification",
   "scripts": {
     "build": "tsc --project tsconfig.json",

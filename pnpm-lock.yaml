@@ -14,6 +14,9 @@ importers:
       dotenv:
         specifier: ^17.2.0
         version: 17.2.0
+      drizzle-kit:
+        specifier: ^0.31.4
+        version: 0.31.4
       drizzle-orm:
         specifier: ^0.44.2
         version: 0.44.2(@types/pg@8.15.4)(pg@8.16.3)
@@ -66,9 +69,6 @@ importers:
       concurrently:
         specifier: ^9.2.0
         version: 9.2.0
-      drizzle-kit:
-        specifier: ^0.31.4
-        version: 0.31.4
       jest:
         specifier: ^30.0.4
         version: 30.0.4(@types/node@24.0.10)(esbuild-register@3.6.0(esbuild@0.25.6))(ts-node@10.9.2(@types/node@24.0.10)(typescript@5.8.3))

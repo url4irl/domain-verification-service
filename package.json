@@ -35,7 +35,6 @@
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
     "concurrently": "^9.2.0",
-    "drizzle-kit": "^0.31.4",
     "jest": "^30.0.4",
     "semantic-release": "^24.2.7",
     "supertest": "^7.1.3",
@@ -49,6 +48,7 @@
   "dependencies": {
     "body-parser": "^2.2.0",
     "dotenv": "^17.2.0",
+    "drizzle-kit": "^0.31.4",
     "drizzle-orm": "^0.44.2",
     "express": "^4.21.2",
     "pg": "^8.16.3",

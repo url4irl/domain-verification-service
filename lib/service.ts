@@ -1,6 +1,6 @@
 import dns from "dns/promises";
 import crypto from "crypto";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { db } from "./db/db";
 import { domainsTable, verificationLogsTable } from "./db/schema";
 
@@ -9,7 +9,8 @@ export class DomainVerificationService {
 
   async testDbConnection() {
     try {
-      await db.select().from(domainsTable).limit(1);
+      // Test database connection with a simple query
+      await db.execute(sql`SELECT 1`);
       return true;
     } catch (error) {
       throw new Error(`Database connection failed: ${(error as any)?.message}`);
@@ -84,7 +85,10 @@ export class DomainVerificationService {
         .select()
         .from(domainsTable)
         .where(
-          and(eq(domainsTable.name, domain), eq(domainsTable.customerId, customerId))
+          and(
+            eq(domainsTable.name, domain),
+            eq(domainsTable.customerId, customerId)
+          )
         )
         .limit(1);
 
@@ -137,7 +141,10 @@ export class DomainVerificationService {
         .select()
         .from(domainsTable)
         .where(
-          and(eq(domainsTable.name, domain), eq(domainsTable.customerId, customerId))
+          and(
+            eq(domainsTable.name, domain),
+            eq(domainsTable.customerId, customerId)
+          )
         )
         .limit(1);
 
@@ -216,7 +223,10 @@ export class DomainVerificationService {
         .select()
         .from(domainsTable)
         .where(
-          and(eq(domainsTable.name, domain), eq(domainsTable.customerId, customerId))
+          and(
+            eq(domainsTable.name, domain),
+            eq(domainsTable.customerId, customerId)
+          )
         )
         .limit(1);
 
@@ -274,7 +284,10 @@ export class DomainVerificationService {
       .select()
       .from(domainsTable)
       .where(
-        and(eq(domainsTable.name, domain), eq(domainsTable.customerId, customerId))
+        and(
+          eq(domainsTable.name, domain),
+          eq(domainsTable.customerId, customerId)
+        )
       )
       .limit(1);
 
@@ -314,7 +327,10 @@ export class DomainVerificationService {
       .select()
       .from(domainsTable)
       .where(
-        and(eq(domainsTable.name, domain), eq(domainsTable.customerId, customerId))
+        and(
+          eq(domainsTable.name, domain),
+          eq(domainsTable.customerId, customerId)
+        )
       )
       .limit(1);
 
@@ -346,7 +362,10 @@ export class DomainVerificationService {
       .select()
       .from(domainsTable)
       .where(
-        and(eq(domainsTable.name, domain), eq(domainsTable.customerId, customerId))
+        and(
+          eq(domainsTable.name, domain),
+          eq(domainsTable.customerId, customerId)
+        )
       )
       .limit(1);
 

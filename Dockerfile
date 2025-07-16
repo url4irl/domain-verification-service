@@ -54,8 +54,5 @@ EXPOSE 4000
 ENV NODE_ENV=production
 ENV PORT=4000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 CMD node -e "const http = require('http'); const options = { host: 'localhost', port: process.env.PORT || 4000, path: '/', timeout: 2000 }; const req = http.request(options, (res) => { console.log('Health check passed'); process.exit(res.statusCode === 200 ? 0 : 1); }); req.on('error', () => process.exit(1)); req.on('timeout', () => process.exit(1)); req.end();"
-
 # Start the application
 CMD ["pnpm", "start"]

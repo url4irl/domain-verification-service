@@ -8,8 +8,13 @@ Verify and instruct domain configuration, enabling you to proceed pointing to th
 - [MCP Server (work in progress)](#mcp-server-work-in-progress)
 - [Development](#development)
 - [Testing](#testing)
+  - [Dockerized Testing](#dockerized-testing)
   - [Test Database Management](#test-database-management)
   - [Test Scenarios](#test-scenarios)
+- [Database Management](#database-management)
+  - [Database Migration Lifecycle](#database-migration-lifecycle)
+    - [Production Environment](#production-environment)
+    - [Development Environment](#development-environment)
 - [Deployment](#deployment)
 
 ## How to use this service
@@ -81,6 +86,8 @@ To run the service in development mode, follow these steps:
     ```bash
     pnpm dev
     ```
+5. The service will be available at `http://localhost:4000`
+6. See the [Database Management](#database-management) to learn how to manage the database.
 
 ## Testing
 
@@ -102,6 +109,20 @@ pnpm run test:teardown
 pnpm test
 ```
 
+### Dockerized Testing
+
+Before deploying the service, it's best practice to run the tests against a production-like Docker container. The project includes a script to facilitate this.
+
+```bash
+pnpm docker:test
+```
+
+This script will:
+1.  Build the Docker image.
+2.  Start the containerized service and a test database.
+3.  Run the e2e tests against the service running in Docker.
+4.  Stop and remove the containers.
+
 ### Test Database Management
 
 Each test automatically:
@@ -119,6 +140,29 @@ Each test automatically:
 - ✅ Edge cases and error conditions
 - ✅ Concurrent operations
 - ✅ Data cleanup and isolation
+
+## Database Management
+
+### Database Migration Lifecycle
+
+#### Production Environment
+
+Database migrations are managed using Drizzle ORM. In a production environment, migrations must be applied **manually** by accessing the running container and executing the following command within it:
+
+```bash
+pnpm drizzle migrate --config ./dist/drizzle.config.js
+```
+
+This command will apply any pending schema changes to the database. Ensure you run this command after any deployment that includes database schema modifications.
+
+#### Development Environment
+
+In development, create and apply migrations using:
+
+```bash
+pnpm run db:generate # Generates a new migration file
+pnpm run db:migrate # Applies the migration to the database
+```
 
 ## Deployment
 

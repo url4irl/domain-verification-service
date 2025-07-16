@@ -56,7 +56,7 @@ ENV PORT=4000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "const http = require('http'); const req = http.request({ host: '127.0.0.1', port: process.env.PORT || 4000, path: '/', timeout: 2000 }, (res) => { console.log('Health check passed'); process.exit(res.statusCode === 200 ? 0 : 1); }); req.on('error', (err) => { console.error('Health check failed:', err.message); process.exit(1); }); req.setTimeout(2000, () => { console.error('Health check timeout'); req.destroy(); process.exit(1); }); req.end();"
+  CMD node -e "const http = require('http'); console.log('Starting health check...'); const req = http.request({ host: '127.0.0.1', port: process.env.PORT || 4000, path: '/', timeout: 2000 }, (res) => { console.log('Response received, status:', res.statusCode); if (res.statusCode === 200) { console.log('Health check passed'); process.exit(0); } else { console.log('Health check failed - wrong status code'); process.exit(1); } }); req.on('error', (err) => { console.log('Health check connection error:', err.message); process.exit(1); }); req.setTimeout(2000, () => { console.log('Health check timeout - no response'); process.exit(1); }); req.end();"
 
 # Start the application
 CMD ["pnpm", "start"]

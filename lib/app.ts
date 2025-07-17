@@ -2,8 +2,9 @@ import express from "express";
 import swaggerUi from "swagger-ui-express";
 import { DomainVerificationService } from "./service";
 import { jsDocSpecs } from "./docs";
+import type { Application } from "express";
 
-export function createApp(enableSwagger: boolean = true) {
+export function createApp(enableSwagger: boolean = true): Application {
   const app = express();
 
   const verificationService = new DomainVerificationService();

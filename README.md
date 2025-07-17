@@ -3,6 +3,11 @@
 Verify and instruct domain configuration, enabling you to proceed pointing to them after DNS TXT record verification.
 
 - [How to use this service](#how-to-use-this-service)
+  - [Client SDK](#client-sdk)
+    - [Features](#features)
+    - [Installation](#installation)
+    - [Quick Start](#quick-start)
+    - [Environment Support](#environment-support)
 - [Flow Diagram](#flow-diagram)
 - [API Documentation](#api-documentation)
 - [MCP Server (work in progress)](#mcp-server-work-in-progress)
@@ -26,6 +31,66 @@ This service is designed for a "User" (e.g., a service or backend) that manages 
 3.  **User & Customer:** The User presents the TXT record instructions to the Customer. The Customer must then manually add this TXT record to their domain's DNS settings.
 4.  **User:** Periodically check if the domain is verified by sending a `GET` request to `/api/domains/check` with the domain name and customer ID.
 5.  **User:** Once verified, the User can proceed to change its infrastructure/application/service to use the verified domain for the customer.
+
+### Client SDK
+
+A TypeScript client library for the Domain Verification Service API, providing type-safe domain verification and validation with built-in input validation using Zod.
+
+#### Features
+
+- 🔒 **Type Safety**: Full TypeScript support with comprehensive type definitions
+- ✅ **Input Validation**: Built-in validation using Zod schemas
+- 🚀 **Promise-based**: Modern async/await API
+- 📦 **Zero Configuration**: Works out of the box with sensible defaults
+- 🌐 **Node.js Compatible**: Uses node-fetch for HTTP requests
+
+#### Installation
+
+```bash
+pnpm add @url4irl/domain-verification
+# or
+npm install @url4irl/domain-verification
+# or
+yarn add @url4irl/domain-verification
+```
+
+#### Quick Start
+
+```typescript
+import { DomainVerificationClient } from '@url4irl/domain-verification';
+
+const client = new DomainVerificationClient(); // or specify a custom base URL in case you are self-hosting the service
+
+// Register a domain
+await client.registerDomain({
+  domain: 'example.com',
+  ip: '192.168.1.1',
+  customerId: 'customer123'
+});
+
+// Generate verification token
+const tokenResponse = await client.generateVerificationToken({
+  domain: 'example.com',
+  customerId: 'customer123',
+  serviceHost: 'verification.yourservice.com',
+  txtRecordVerifyKey: 'your-verify-key'
+});
+
+// Check domain verification
+const verificationResult = await client.checkDomainVerification({
+  domain: 'example.com',
+  customerId: 'customer123',
+  serviceHost: 'verification.yourservice.com',
+  txtRecordVerifyKey: 'your-verify-key'
+});
+```
+
+#### Environment Support
+
+- **Node.js**: 14+ (uses node-fetch for HTTP requests)
+- **TypeScript**: 4.0+
+- **ES Modules**: Supported
+- **CommonJS**: Supported
 
 ## Flow Diagram
 
@@ -65,7 +130,7 @@ sequenceDiagram
 
 ## API Documentation
 
-The API documentation is available on `/docs`. You can access it by navigating to `http://localhost:4000/docs` in your web browser.
+The API documentation is available on `/docs`. You can access it by navigating to `https://domain-verification.url4irl.com/docs` in your web browser (or `http://localhost:4000/docs` if running locally).
 
 OpenAPI specs are also available at [openapi.json](./openapi.json).
 

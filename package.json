@@ -1,9 +1,24 @@
 {
-  "name": "domain-verification-service",
+  "name": "@url4irl/domain-verification",
   "version": "1.0.0",
-  "description": "Verify and instruct domain configuration, enabling you to proceed pointing to them after DNS TXT record verification",
+  "description": "A TypeScript client library for the Domain Verification Service API, with built-in validation and type safety",
+  "main": "dist/lib/client/index.js",
+  "types": "dist/lib/client/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/lib/client/index.d.ts",
+      "import": "./dist/lib/client/index.js",
+      "require": "./dist/lib/client/index.js"
+    }
+  },
+  "files": [
+    "dist/lib/client",
+    "README.md",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "build": "tsc --project tsconfig.json",
+    "prepublishOnly": "pnpm run build",
     "start": "node dist/lib/api.js",
     "dev": "concurrently -n backend,db,db-studio -c blue.bold,cyan.bold,green.bold \"wait-on tcp:5432 && ts-node-dev --respawn --transpile-only lib/api.ts\" \"docker compose -f ./dev/docker-compose.yml up\" \"wait-on tcp:5432 && drizzle-kit studio\"",
     "db:generate": "drizzle-kit generate",
@@ -18,7 +33,18 @@
     "docker:test": "./scripts/test-docker-service.sh",
     "release": "semantic-release"
   },
-  "keywords": [],
+  "keywords": [
+    "domain",
+    "verification",
+    "client",
+    "api",
+    "typescript",
+    "nodejs",
+    "zod",
+    "dns",
+    "txt-record",
+    "domain-validation"
+  ],
   "author": "Marcelo Cardoso",
   "license": "ISC",
   "packageManager": "pnpm@10.6.5",
@@ -30,6 +56,7 @@
     "@types/express": "^4.17.23",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.10",
+    "@types/node-fetch": "^2.6.4",
     "@types/pg": "^8.15.4",
     "@types/supertest": "^6.0.3",
     "@types/swagger-jsdoc": "^6.0.4",
@@ -51,8 +78,10 @@
     "drizzle-kit": "^0.31.4",
     "drizzle-orm": "^0.44.2",
     "express": "^4.21.2",
+    "node-fetch": "^2.6.1",
     "pg": "^8.16.3",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "zod": "^3.23.8"
   }
 }

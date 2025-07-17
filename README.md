@@ -10,7 +10,7 @@ Verify and instruct domain configuration, enabling you to proceed pointing to th
     - [Environment Support](#environment-support)
 - [Flow Diagram](#flow-diagram)
 - [API Documentation](#api-documentation)
-- [MCP Server (work in progress)](#mcp-server-work-in-progress)
+- [MCP Server (soon)](#mcp-server-soon)
 - [Development](#development)
 - [Testing](#testing)
   - [Dockerized Testing](#dockerized-testing)
@@ -134,7 +134,7 @@ The API documentation is available on `/docs`. You can access it by navigating t
 
 OpenAPI specs are also available at [openapi.json](./openapi.json).
 
-## MCP Server (work in progress)
+## MCP Server (soon)
 
 This service provides a MCP (Model Context Protocol) server that allows you to interact with the service using the MCP protocol. The MCP server is available at `/mcp`.
 
